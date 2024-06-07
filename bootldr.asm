@@ -1,5 +1,6 @@
 [org 0x7c00]
 KERNEL_LOCATION equ 0x1000
+NUM_SECTORS equ 4  ; Number of sectors to load
 
 mov [BOOT_DISK], dl
 
@@ -9,17 +10,21 @@ mov ds, ax
 mov bp, 0x8000
 mov sp, bp
 
+; Load additional sectors (NUM_SECTORS) into memory
 mov bx, KERNEL_LOCATION
-mov dh, 2
+mov dh, NUM_SECTORS
 
-mov ah, 0x02
-mov al, dh
-mov ch, 0x00
-mov dh, 0x00
-mov cl, 0x02
+mov ah, 0x02       ; BIOS read sector function
+mov al, dh         ; Number of sectors to read
+mov ch, 0x00       ; Cylinder
+mov dh, 0x00       ; Head
+mov cl, 0x02       ; Starting sector (sector 2)
 mov dl, [BOOT_DISK]
-int 0x13
+int 0x13           ; BIOS interrupt to read disk
 
+jc disk_error      ; Jump if carry flag is set (error occurred)
+
+; Switch to text mode 3
 mov ah, 0x0
 mov al, 0x3
 int 0x10
@@ -35,6 +40,10 @@ mov cr0, eax
 jmp CODE_SEG:start_protected_mode
 
 jmp $
+
+disk_error:
+    ; Handle disk read error (optional)
+    hlt
 
 BOOT_DISK: db 0
 
@@ -62,7 +71,7 @@ GDT_start:
 GDT_end:
 
 GDT_descriptor:
-    dw (GDT_end - GDT_start) - 1
+    dw GDT_end - GDT_start - 1
     dd GDT_start
 
 [bits 32]
