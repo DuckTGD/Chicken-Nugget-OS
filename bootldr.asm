@@ -62,7 +62,7 @@ GDT_start:
 GDT_end:
 
 GDT_descriptor:
-    dw GDT_end - GDT_start - 1
+    dw (GDT_end - GDT_start) - 1
     dd GDT_start
 
 [bits 32]
